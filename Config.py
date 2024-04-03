@@ -1,14 +1,14 @@
-from threading import Thread
-import cv2, time
+import cv2
 
 #Creates a class for turning on the webcam
 class WebCam(object):
 
     #By default, the resolution is 720p (1280 x 720) and the source is 0 (default webcam)
-    def __init__(self, width=1280, height=720, source=0) -> None:
+    def __init__(self, exitKey, width=1280, height=720, source=0) -> None:
         self.width = width
         self.height = height
         self.source = source
+        self.exitKey = exitKey
 
         #Sets the capture device
         self.capture = cv2.VideoCapture(self.source)
@@ -23,7 +23,7 @@ class WebCam(object):
             cv2.imshow("Webcam", frame)
         
             #When the user presses "q", webcam turns off
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+            if cv2.waitKey(1) & 0xFF == ord(self.exitKey):
                 break
         
         #After loop is done, releases capture and closes all windows
@@ -33,7 +33,7 @@ class WebCam(object):
 
 
 if __name__ == '__main__':
-    webcam = WebCam()
+    webcam = WebCam("q")
     webcam.showSource()
 
 
