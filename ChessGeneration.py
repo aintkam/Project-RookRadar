@@ -12,9 +12,20 @@ BLACK = (0, 0, 0)
 
 w_pawn_img = pygame.image.load("w_pawn.png")
 b_pawn_img = pygame.image.load("b_pawn.png")
+w_rook_img = pygame.image.load("w_rook.png")
+b_rook_img = pygame.image.load("b_rook.png")
+w_knight_img = pygame.image.load("w_knight.png")
+b_knight_img = pygame.image.load("b_knight.png")
+
 pawn_size = (SQUARE_SIZE, SQUARE_SIZE)
+rook_size = (SQUARE_SIZE, SQUARE_SIZE)
+knight_size = (SQUARE_SIZE, SQUARE_SIZE)
 w_pawn_img = pygame.transform.scale(w_pawn_img, pawn_size)
 b_pawn_img = pygame.transform.scale(b_pawn_img, pawn_size)
+w_rook_img = pygame.transform.scale(w_rook_img, rook_size)
+b_rook_img = pygame.transform.scale(b_rook_img, rook_size)
+w_knight_img = pygame.transform.scale(w_knight_img, knight_size)
+b_knight_img = pygame.transform.scale(b_knight_img, knight_size)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chessboard")
@@ -32,6 +43,16 @@ def draw_pieces():
                 screen.blit(b_pawn_img, (col * SQUARE_SIZE, row * SQUARE_SIZE))
             elif row == 6:
                 screen.blit(w_pawn_img, (col * SQUARE_SIZE, row * SQUARE_SIZE))
+                 
+            elif row == 0 and (col == 1 or col == 6):
+                screen.blit(b_knight_img, (col * SQUARE_SIZE, row * SQUARE_SIZE))
+            elif row == 7 and (col == 1 or col == 6):
+                screen.blit(w_knight_img, (col * SQUARE_SIZE, row * SQUARE_SIZE))
+                
+            elif row == 0 and (col == 0 or col == 7):
+                screen.blit(b_rook_img, (col * SQUARE_SIZE, row * SQUARE_SIZE))
+            elif row == 7 and (col == 0 or col == 7):
+                screen.blit(w_rook_img, (col * SQUARE_SIZE, row * SQUARE_SIZE))
 
 ######## MAIN LOOP ########
 def main():
