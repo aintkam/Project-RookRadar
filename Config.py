@@ -22,7 +22,7 @@ class WebCam(object):
             ret, frame = self.updateSource()
             cv2.imshow("Webcam", frame)
         
-            #When the user presses "q", webcam turns off
+            #When the user presses the exitKey, webcam turns off
             if cv2.waitKey(1) & 0xFF == ord(self.exitKey):
                 break
         
@@ -30,7 +30,11 @@ class WebCam(object):
         self.capture.release()
         cv2.destroyAllWindows()
 
-
+#Creates a class for detectig a given object using the webcam
+class DetectObject(WebCam):
+    def __init__(self, givenObject, exitKey, width=1280, height=720, source=0) -> None:
+        self.givenObject = givenObject
+        super().__init__(exitKey, width, height, source)
 
 if __name__ == '__main__':
     webcam = WebCam("q")
