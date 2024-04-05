@@ -9,7 +9,7 @@ interframe_wait_ms = 30
 
 cap = cv2.VideoCapture(file_name)
 
-if __name__ == "__main__"
+if __name__ == "__main__":
 
     if not cap.isOpened():
         print("Error: Could not open video.")
