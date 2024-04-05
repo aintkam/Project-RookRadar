@@ -3,7 +3,7 @@ from pygame import mixer
 
 mixer.init()
 
-file_name = "TotallyRealVideo.mp4"
+file_name = "LeBonBon/TotallyRealVideo.mp4"
 window_name = "Press Q to Exit"
 interframe_wait_ms = 30
 
@@ -17,7 +17,7 @@ if __name__ == "__main__":
         
     cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
     cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    mixer.music.load("TotallyRealAudio.mp3")
+    mixer.music.load("LeBonBon/TotallyRealAudio.mp3")
     mixer.music.play()
 
     while (True):
