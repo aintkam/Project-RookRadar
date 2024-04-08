@@ -1,6 +1,6 @@
 # Screen dimensions
-WIDTH = 580
-HEIGHT = 580
+WIDTH = 600
+HEIGHT = 600
 
 # Board dimensions
 ROWS = 8
