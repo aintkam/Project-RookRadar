@@ -109,6 +109,8 @@ class Game:
         self.next_player = 'white' if self.next_player == 'black' else 'black'
 
     def set_hover(self, row, col):
+        row = min(max(row, 0), ROWS - 1)
+        col = min(max(col, 0), COLS - 1)
         self.hovered_sqr = self.board.squares[row][col]
 
     def change_theme(self):
