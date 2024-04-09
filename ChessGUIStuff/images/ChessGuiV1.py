@@ -29,7 +29,7 @@ textRect = text.get_rect(center=(buttonSurface.get_width()/2, buttonSurface.get_
 buttonRect = pygame.Rect(320, 420, 150, 50)  # Adjust the position as needed
 
 # creating the logo instance 
-img = pygame.image.load('Logo.png').convert()
+img = pygame.image.load('ChessGUIStuff/images/Logo.png').convert()
 img = pygame.transform.scale(img, (400, 400))
 
 # define colors
