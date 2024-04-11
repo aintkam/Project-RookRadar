@@ -1,47 +1,73 @@
 import cv2
+from threading import Thread
+from roboflow import Roboflow
 
-#Creates a class for turning on the webcam
+# Modify the WebCam class to use a different backend
 class WebCam(object):
-
-    #By default, the resolution is 720p (1280 x 720) and the source is 0 (default webcam)
-    def __init__(self, exitKey, source=0) -> None:
+    def __init__(self, exitKey, source=0, backend=cv2.CAP_DSHOW) -> None:
         self.exitKey = exitKey
         self.source = source
-        
-        #Sets the capture device
-        self.capture = cv2.VideoCapture(self.source)
+        self.capture = cv2.VideoCapture(self.source, backend)
         self.width = int(self.capture.get(3))
         self.height = int(self.capture.get(4))
-
-        #Allows the webcam to fullscreen and fill the window
         cv2.namedWindow("Webcam", cv2.WND_PROP_FULLSCREEN)
 
-    #Returns if the camera is on and the curernt frame
+
     def updateSource(self):
         ret, frame = self.capture.read()
         return ret, frame
-    
+
     def showSource(self):
         while True:
             ret, frame = self.updateSource()
             if ret:
-
                 cv2.imshow("Webcam", frame)
-            
-                #When the user presses the exitKey, webcam turns off
                 if cv2.waitKey(1) & 0xFF == ord(self.exitKey):
                     break
-        
-        #After loop is done, releases capture and closes all windows
         self.capture.release()
         cv2.destroyAllWindows()
 
-#Creates a class for detectig a given object using the webcam
 class DetectObject(WebCam):
     def __init__(self, givenObject, exitKey, source=0) -> None:
         self.givenObject = givenObject
         super().__init__(exitKey, source)
 
+    def detect_and_display(self):
+        while True:
+            ret, frame = self.updateSource()
+            if ret:
+                # Resize frame to a smaller resolution
+                resized_frame = cv2.resize(frame, (640, 480))  # Adjust dimensions as needed
+
+                # Perform object detection on the resized frame
+                predictions = model.predict(resized_frame, confidence=40, overlap=30).json()
+
+                if predictions:
+                    print(predictions)
+
+
+                # Display the original frame with detections
+                cv2.imshow("Webcam", frame)
+
+
+            if cv2.waitKey(1) & 0xFF == ord(self.exitKey):
+                break
+        self.capture.release()
+        cv2.destroyAllWindows()
+
 if __name__ == '__main__':
-    webcam = WebCam("q")
+    rf = Roboflow(api_key="znjiO7f0O4s1TucZWJd6")
+    project = rf.workspace("chess-piece").project("chess-full-ssuq4")
+    version = project.version(1)
+    dataset = version.download("yolov9")
+    model = project.version(1).model
+
+    webcam = WebCam("q", backend=cv2.CAP_DSHOW)  # or cv2.CAP_V4L2
+    detector = DetectObject("chess-piece", "q")
+
+    # Start a separate thread for object detection
+    detect_thread = Thread(target=detector.detect_and_display)
+    detect_thread.start()
+    
+    # Display webcam feed
     webcam.showSource()
