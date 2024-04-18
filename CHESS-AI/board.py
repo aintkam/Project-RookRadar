@@ -298,20 +298,21 @@ class Board:
                 possible_move_row, possible_move_col = possible_move
 
                 if Square.in_range(possible_move_row, possible_move_col):
-                    if self.squares[possible_move_row][possible_move_col].isempty_or_enemy(piece.color):
-                        # create squares of the new move
+                    square = self.squares[possible_move_row][possible_move_col]
+                    # If the square is empty or has an enemy piece, it's a valid move
+                    if square.isempty_or_enemy(piece.color):
+                        # Create squares for the new move
                         initial = Square(row, col)
-                        final = Square(possible_move_row, possible_move_col) # piece=piece
-                        # create new move
+                        final = Square(possible_move_row, possible_move_col, square.piece)
+                        # Create a new move
                         move = Move(initial, final)
-                        # check potencial checks
+                        # Check for potential checks if needed
                         if bool:
                             if not self.in_check(piece, move):
-                                # append new move
+                                # Append the new move to the king's valid moves
                                 piece.add_move(move)
-                            else: break
                         else:
-                            # append new move
+                            # Append the new move to the king's valid moves
                             piece.add_move(move)
 
             # castling moves
