@@ -7,6 +7,8 @@ class Dragger:
     def __init__(self):
         self.piece = None
         self.dragging = False
+        self.offsetX = 0
+        self.offsetY = 0
         self.mouseX = 0
         self.mouseY = 0
         self.initial_row = 0
@@ -29,7 +31,9 @@ class Dragger:
     # other methods
 
     def update_mouse(self, pos):
-        self.mouseX, self.mouseY = pos # (xcor, ycor)
+        x, y = pos # (xcor, ycor)
+        self.mouseX = min(max(x - self.offsetX, SQSIZE // 2), WIDTH - SQSIZE)
+        self.mouseY = min(max(y - self.offsetY, SQSIZE // 2), HEIGHT - SQSIZE)
 
     def save_initial(self, pos):
         self.initial_row = pos[1] // SQSIZE
