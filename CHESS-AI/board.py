@@ -62,7 +62,19 @@ class Board:
 
     def check_promotion(self, piece, final):
         if final.row == 0 or final.row == 7:
-            self.squares[final.row][final.col].piece = Queen(piece.color)
+            color = piece.color
+            promotion_options = ['Queen', 'Bishop', 'Knight', 'Rook']
+            
+            promotion_choice = random.choice(promotion_options)
+        
+            if promotion_choice == 'Queen':
+                self.squares[final.row][final.col].piece = Queen(color)
+            elif promotion_choice == 'Bishop':
+                self.squares[final.row][final.col].piece = Bishop(color)
+            elif promotion_choice == 'Knight':
+                self.squares[final.row][final.col].piece = Knight(color)
+            elif promotion_choice == 'Rook':
+                self.squares[final.row][final.col].piece = Rook(color)
 
     def castling(self, initial, final):
         return abs(initial.col - final.col) == 2
