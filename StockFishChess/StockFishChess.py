@@ -20,7 +20,7 @@ GREEN = (0, 255, 128, 0)
 piece_images = {}
 for color in ['w', 'b']:
     for piece in ['p', 'r', 'n', 'b', 'q', 'k']:
-        piece_images[color + piece] = pygame.image.load(f'ChessPieceImages/{color}{piece}.png')
+        piece_images[color + piece] = pygame.image.load(f'StockFishChess/ChessPieceImages/{color}{piece}.png')
 
 # Initialize the chess board
 board = chess.Board()
