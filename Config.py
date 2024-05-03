@@ -93,7 +93,7 @@ class DetectObject(WebCam):
                 cv2.imshow("Edges", edges)
 
                 
-                lines = cv2.HoughLines(edges, rho=1, theta=np.pi/180, threshold=100)
+                '''lines = cv2.HoughLines(edges, rho=1, theta=np.pi/180, threshold=100)
 
                 # Draw lines on the original image
                 if lines is not None:
@@ -110,7 +110,7 @@ class DetectObject(WebCam):
                         cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
                 # Display the results
-                cv2.imshow('Hough Lines', frame)
+                cv2.imshow('Hough Lines', frame)'''
                 
 
 
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     detector = DetectObject("chess-piece", "q", 1)
 
     # Start a separate thread for object detection
-    detect_thread = Thread(target=detector.birdsEyeView())
+    detect_thread = Thread(target=detector.showSource)
     detect_thread.start()
     
     # Display webcam feed

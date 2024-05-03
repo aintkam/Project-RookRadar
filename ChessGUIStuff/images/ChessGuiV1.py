@@ -44,9 +44,9 @@ def draw_other_gui():
     pygame.display.update()
 
 # creating the logo instance 
-img = pygame.image.load('Logo.png').convert()
+img = pygame.image.load('ChessGUIStuff/Images/Logo.png').convert()
 img = pygame.transform.scale(img, (400, 400))
-img2 = pygame.image.load('Rook.png').convert()
+img2 = pygame.image.load('ChessGUIStuff/Images/Rook.png').convert()
 img2 = pygame.transform.scale(img2, (100, 100))
 
 # game loop
