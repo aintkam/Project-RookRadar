@@ -13,12 +13,9 @@ class WebCam(object):
         self.width = int(self.capture.get(3))
         self.height = int(self.capture.get(4))
         cv2.namedWindow("Webcam", cv2.WND_PROP_FULLSCREEN)
-
-
     def updateSource(self):
         ret, frame = self.capture.read()
         return ret, frame
-
     def showSource(self):
         while True:
             ret, frame = self.updateSource()
@@ -28,10 +25,10 @@ class WebCam(object):
                     break
         self.capture.release()
         cv2.destroyAllWindows()
-
 class DetectObject(WebCam):
     def __init__(self, givenObject, exitKey, source=0) -> None:
         self.givenObject = givenObject
+        super().__init__(exitKey, source)
         WebCam.__init__(self, exitKey, source)
 
     def showSource(self):
@@ -41,10 +38,27 @@ class DetectObject(WebCam):
             if ret:
                 resized_frame = cv2.resize(frame, (640, 480)) 
 
+                predictions = model.predict(resized_frame, confidence=34, overlap=30).json()
                 predictions = model.predict(resized_frame, confidence=33, overlap=30).json()
-                
+
                 if 'predictions' in predictions and predictions['predictions']:
                     for prediction in predictions['predictions']:
+                        try:
+                            # Extracting (x, y) coordinates
+                            x_center = prediction['x'] * frame.shape[1]
+                            y_center = prediction['y'] * frame.shape[0]
+
+                            objectName = prediction['class']
+
+                            # Print coordinates
+                            print(f"{objectName}: ({x_center}, {y_center})")
+
+                            # Save coordinates to a file
+                            with open('object_coordinates.txt', 'a') as f:
+                                f.write(f"{objectName}: ({x_center}, {y_center})\n")
+                        except json.JSONDecodeError as e:
+                            print(f"Failed to decode JSON: {e}")
+                            continue
                         print(prediction)
                         # Extracting (x, y) coordinates
                         x0 = prediction['x'] - prediction['width'] / 2
@@ -63,8 +77,9 @@ class DetectObject(WebCam):
                                     fontScale = 0.6,
                                     color = (255, 255, 255),
                                     thickness=2)
-                        
+
                 # Display the original frame with detections
+                cv2.imshow("Webcam", frame)
                 cv2.imshow("Detector", resized_frame)
 
 
@@ -92,8 +107,8 @@ class DetectObject(WebCam):
                 edges = cv2.Canny(gray, 100, 300)
                 cv2.imshow("Edges", edges)
 
-                
-                '''lines = cv2.HoughLines(edges, rho=1, theta=np.pi/180, threshold=100)
+
+                lines = cv2.HoughLines(edges, rho=1, theta=np.pi/180, threshold=100)
 
                 # Draw lines on the original image
                 if lines is not None:
@@ -110,15 +125,33 @@ class DetectObject(WebCam):
                         cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
                 # Display the results
-                cv2.imshow('Hough Lines', frame)'''
-                
+                cv2.imshow('Hough Lines', frame)
+
 
 
             if cv2.waitKey(1) & 0xFF == ord(self.exitKey):
                 break
+        
+    def showCorners(self):
+        rf = Roboflow(api_key="znjiO7f0O4s1TucZWJd6")
+        project = rf.workspace("chess-piece").project("chessboard-corners-isqda")
+        version = project.version(1)
+        dataset = version.download("yolov9")
+        model = project.version(1).model
 
-        self.capture.release()
-        cv2.destroyAllWindows()
+        print("Loaded")
+        
+        while True:
+            ret, frame = self.updateSource()
+            # Convert to grayscale
+            if ret:
+                resized_frame = cv2.resize(frame, (640, 480)) 
+
+                predictions = model.predict(resized_frame, confidence=34, overlap=30).json()
+                predictions = model.predict(resized_frame, confidence=33, overlap=30).json()
+    
+            self.capture.release()
+            cv2.destroyAllWindows()
 
 
 
@@ -130,12 +163,14 @@ if __name__ == '__main__':
     model = project.version(1).model
     print("Loaded")
 
+    webcam = WebCam("q",0, backend=cv2.CAP_DSHOW)  # or cv2.CAP_V4L2
+    detector = DetectObject("chess-piece", "q", 0)
     webcam = WebCam("q",1, backend=cv2.CAP_DSHOW)  # or cv2.CAP_V4L2
     detector = DetectObject("chess-piece", "q", 1)
 
     # Start a separate thread for object detection
-    detect_thread = Thread(target=detector.showSource)
+    detect_thread = Thread(target=detector.showCorners())
     detect_thread.start()
-    
+
     # Display webcam feed
-    #detector.showSource()
+    webcam.showSource()
