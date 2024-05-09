@@ -12,7 +12,7 @@ class WebCam(object):
         self.capture = cv2.VideoCapture(self.source, backend)
         self.width = int(self.capture.get(3))
         self.height = int(self.capture.get(4))
-        cv2.namedWindow("Webcam", cv2.WND_PROP_FULLSCREEN)
+    
     def updateSource(self):
         ret, frame = self.capture.read()
         return ret, frame
@@ -25,152 +25,211 @@ class WebCam(object):
                     break
         self.capture.release()
         cv2.destroyAllWindows()
+
 class DetectObject(WebCam):
     def __init__(self, givenObject, exitKey, source=0) -> None:
         self.givenObject = givenObject
-        super().__init__(exitKey, source)
         WebCam.__init__(self, exitKey, source)
+    
+    def getPoints(self, prediction):
+        x0 = prediction['x'] - prediction['width'] / 2
+        x1 = prediction['x'] + prediction['width'] / 2
+        y0 = prediction['y'] - prediction['height'] / 2
+        y1 = prediction['y'] + prediction['height'] / 2
 
-    def showSource(self):
+        return x0, x1, y0, y1
+
+    def getCorners(self, predictions):
+        corners = []
+        if 'predictions' in predictions and predictions['predictions']:
+            for prediction in predictions['predictions']:
+
+                objectName = prediction['class']
+
+                # Extracting (x, y) coordinates
+                x0 = prediction['x'] - prediction['width'] / 2
+                x1 = prediction['x'] + prediction['width'] / 2
+                y0 = prediction['y'] - prediction['height'] / 2
+                y1 = prediction['y'] + prediction['height'] / 2
+
+                if objectName == "Top-Left":
+                    # Gets top left corner
+                    corners.append((int(x0), int(y0)))
+                
+                elif objectName == "Top-Right":
+                    # Gets top right corner
+                    corners.append((int(x1), int(y0)))
+                
+                elif objectName == "Bottom-Left":
+                    # Gets bottom left corner
+                    corners.append((int(x0), int(y1)))
+                
+                elif objectName == "Bottom-Right":
+                    # Gets bottom right corner
+                    corners.append((int(x1), int(y1)))
+        
+            return corners
+        
+        return [(0,0),(0,0),(0,0),(0,0)]
+    
+    def orderPoints(self, corners):
+        # Convert the list of corners to a NumPy array
+        corner_array = np.array(corners)
+
+        rect = np.zeros((4, 2), dtype=np.int32)
+
+        s = corner_array.sum(axis=1)
+        rect[0] = corner_array[np.argmin(s)]
+        rect[2] = corner_array[np.argmax(s)]
+
+        diff = np.diff(corner_array, axis=1)
+        rect[1] = corner_array[np.argmin(diff)]
+        rect[3] = corner_array[np.argmax(diff)]
+
+        return rect
+
+    def perspectiveTransform(self, chessboard_corners, width, height):
+        # Define the coordinates of the destination points (a rectangle)
+        dst_pts  = np.array([[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]], dtype=np.float32)
+    
+        # Convert the coordinates of the chessboard corners to numpy array
+        src_pts = np.array(chessboard_corners, dtype=np.float32)
+
+         # Compute the perspective transform matrix
+        perspectiveMatrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
+    
+        return perspectiveMatrix
+    
+    def getSquares(self, width, height):
+        # Calculate the spacing between horizontal and vertical lines
+        horizontal_spacing = width // 8
+        vertical_spacing = height // 8
+    
+        squares = []
+    
+        # Iterate through each row
+        for i in range(8):
+            # Calculate the y-coordinate of the current row
+            y = i * vertical_spacing
+    
+            row_points = []
+            
+            # Iterate through each column
+            for j in range(8):
+                # Calculate the x-coordinate of the current column
+                x = j * horizontal_spacing
+    
+                # Add the point to the list of row points
+                row_points.append((x, y))
+    
+            # Add the list of row points to the list of squares
+            squares.append(row_points)
+    
+        # No need to transpose the list of squares to iterate through columns
+    
+        return squares
+    
+    def getBoardPosition(self, squares):
+        boardPositions = []
+        for i, sublist in enumerate(squares):
+
+            # Create a temporary list to store modified elements
+            temp_list = []
+
+            # Loop through each element in the sublist
+            for j, element in enumerate(sublist):
+
+                # Concatenate the row and column indices with the element value
+                temp_list.append(f"{chr(97+j)}{i+1}")
+
+            # Append the modified sublist to the output list
+            boardPositions.append(temp_list)
+        
+        return boardPositions
+    
+    def detectChessBoard(self):
+        width = 640
+        height = 480
+
         while True:
-            ret, frame = self.updateSource()
-            # Convert to grayscale
+            ret, source = self.updateSource()
             if ret:
-                resized_frame = cv2.resize(frame, (640, 480)) 
+                resizedFrame = cv2.resize(source, (width, height))
+                cornerPredictions = cornerModel.predict(resizedFrame, confidence=15, overlap=30).json()
 
-                predictions = model.predict(resized_frame, confidence=34, overlap=30).json()
-                predictions = model.predict(resized_frame, confidence=33, overlap=30).json()
+                points = self.getCorners(cornerPredictions)
+                orderedPoints = self.orderPoints(points)
 
-                if 'predictions' in predictions and predictions['predictions']:
-                    for prediction in predictions['predictions']:
-                        try:
-                            # Extracting (x, y) coordinates
-                            x_center = prediction['x'] * frame.shape[1]
-                            y_center = prediction['y'] * frame.shape[0]
+                transformMatrix = self.perspectiveTransform(orderedPoints, width, height)
+                transformedImage = cv2.warpPerspective(resizedFrame, transformMatrix, (width, height))
 
-                            objectName = prediction['class']
+                squares = self.getSquares(width, height)
 
-                            # Print coordinates
-                            print(f"{objectName}: ({x_center}, {y_center})")
+                getSquarePosition = self.getBoardPosition(squares)
 
-                            # Save coordinates to a file
-                            with open('object_coordinates.txt', 'a') as f:
-                                f.write(f"{objectName}: ({x_center}, {y_center})\n")
-                        except json.JSONDecodeError as e:
-                            print(f"Failed to decode JSON: {e}")
-                            continue
-                        print(prediction)
-                        # Extracting (x, y) coordinates
-                        x0 = prediction['x'] - prediction['width'] / 2
-                        x1 = prediction['x'] + prediction['width'] / 2
-                        y0 = prediction['y'] - prediction['height'] /2
-                        y1 = prediction['y'] + prediction['height'] /2
+                piecePredictions = model.predict(transformedImage, confidence=32, overlap=30).json()
+                piecePositions = self.getPiecePosition(piecePredictions)
 
-                        start_point = (int(x0), int(y0))
-                        end_point = (int(x1), int(y1))
+                print(squares)
+                print(piecePositions)
 
-                        cv2.rectangle(resized_frame, start_point, end_point, color=(0,0,0), thickness=1)
+                # Draw squares on the resized frame for visualization
+                for row in squares:
+                    for square in row:
+                        cv2.rectangle(transformedImage, square, (square[0] + width // 8, square[1] + height // 8), (255, 0, 0), 2)
 
-                        cv2.putText(resized_frame, prediction['class'], 
-                                    (int(x0), int(y0) - 10), 
-                                    fontFace = cv2.FONT_HERSHEY_SIMPLEX, 
-                                    fontScale = 0.6,
-                                    color = (255, 255, 255),
-                                    thickness=2)
+                # Associate detected pieces with squares and draw them
+                for piece in piecePositions:
+                    for row_index, row in enumerate(squares):
+                        for col_index, square in enumerate(row):
+                            if square[0] <= piece[1][0] <= square[0] + width // 8 and square[1] <= piece[1][1] <= square[1] + height // 8:
+                                cv2.putText(transformedImage, piece[0], square, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                                break
 
-                # Display the original frame with detections
-                cv2.imshow("Webcam", frame)
-                cv2.imshow("Detector", resized_frame)
-
+            cv2.imshow("ChessBoard", transformedImage)
 
             if cv2.waitKey(1) & 0xFF == ord(self.exitKey):
                 break
+
         self.capture.release()
         cv2.destroyAllWindows()
 
-    def birdsEyeView(self):
-        while True:
-            # Gets the webcam
-            ret, frame = self.updateSource()
-            if ret:
+    def getPiecePosition(self, piecePredictions):
+        piecePositions = []
+        if 'predictions' in piecePredictions and piecePredictions['predictions']:
+            for prediction in piecePredictions['predictions']:
+                objectName = prediction['class']
+                xPos = prediction['x']
+                yPos = prediction['y'] / 10
 
-                # Define the ROI (assuming the chessboard is in the central region of the image)
-                roi = np.zeros_like(frame[:, :, 0])
-                roi[30:50, 30:50] = 255  # Adjust the coordinates as needed
-                # Makes the source in gayscale
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                piecePositions.append([objectName, (xPos, yPos)])
 
-                # Converts to a threshold (filters the squares to turn them white or black)
-                adaptiveThreshold = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 101, 10)
-                cv2.imshow("Adaptive Thresh", adaptiveThreshold)
-
-                edges = cv2.Canny(gray, 100, 300)
-                cv2.imshow("Edges", edges)
+        return piecePositions
 
 
-                lines = cv2.HoughLines(edges, rho=1, theta=np.pi/180, threshold=100)
-
-                # Draw lines on the original image
-                if lines is not None:
-                    for line in lines:
-                        rho, theta = line[0]
-                        a = np.cos(theta)
-                        b = np.sin(theta)
-                        x0 = a * rho
-                        y0 = b * rho
-                        x1 = int(x0 + 1000 * (-b))
-                        y1 = int(y0 + 1000 * (a))
-                        x2 = int(x0 - 1000 * (-b))
-                        y2 = int(y0 - 1000 * (a))
-                        cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
-                # Display the results
-                cv2.imshow('Hough Lines', frame)
-
-
-
-            if cv2.waitKey(1) & 0xFF == ord(self.exitKey):
-                break
         
-    def showCorners(self):
-        rf = Roboflow(api_key="znjiO7f0O4s1TucZWJd6")
-        project = rf.workspace("chess-piece").project("chessboard-corners-isqda")
-        version = project.version(1)
-        dataset = version.download("yolov9")
-        model = project.version(1).model
-
-        print("Loaded")
-        
-        while True:
-            ret, frame = self.updateSource()
-            # Convert to grayscale
-            if ret:
-                resized_frame = cv2.resize(frame, (640, 480)) 
-
-                predictions = model.predict(resized_frame, confidence=34, overlap=30).json()
-                predictions = model.predict(resized_frame, confidence=33, overlap=30).json()
-    
-            self.capture.release()
-            cv2.destroyAllWindows()
 
 
 
 if __name__ == '__main__':
-    rf = Roboflow(api_key="znjiO7f0O4s1TucZWJd6")
+    print("Generating Piece Model")
+    rf = Roboflow(api_key="QClgG9OAXgWnJOxQuASr")
+
     project = rf.workspace("chess-piece").project("chess-pieces-pm2qa")
     version = project.version(1)
     dataset = version.download("yolov9")
-    model = project.version(1).model
-    print("Loaded")
+    model = version.model
+    print("Pieces Loaded")
 
-    webcam = WebCam("q",0, backend=cv2.CAP_DSHOW)  # or cv2.CAP_V4L2
-    detector = DetectObject("chess-piece", "q", 0)
-    webcam = WebCam("q",1, backend=cv2.CAP_DSHOW)  # or cv2.CAP_V4L2
+    print("Corner Model")
+    cornerProject = rf.workspace("chess-piece").project("chessboard-corners-isqda")
+    cornerVersion = cornerProject.version(1)
+    cornerDataset = cornerVersion.download("yolov9")
+    cornerModel = cornerVersion.model
+    print("Corners Loaded")
+
     detector = DetectObject("chess-piece", "q", 1)
 
     # Start a separate thread for object detection
-    detect_thread = Thread(target=detector.showCorners())
+    detect_thread = Thread(target=detector.detectChessBoard)
     detect_thread.start()
-
-    # Display webcam feed
-    webcam.showSource()
