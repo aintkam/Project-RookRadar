@@ -1,0 +1,15 @@
+names:
+- Bottom-Left
+- Bottom-Right
+- Top-Left
+- Top-Right
+nc: 4
+roboflow:
+  license: CC BY 4.0
+  project: chessboard-corners-isqda
+  url: https://universe.roboflow.com/chess-piece/chessboard-corners-isqda/dataset/1
+  version: 1
+  workspace: chess-piece
+test: ../test/images
+train: ChessBoard-Corners-1/train/images
+val: ChessBoard-Corners-1/valid/images
