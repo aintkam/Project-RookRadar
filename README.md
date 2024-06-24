@@ -11,9 +11,9 @@ The project uses Roboflow with YOLO v9 for object detection in order to detect t
 We also created a working version of Stockfish chess that the user can play against
 - Without using multi threading, the stockfish is understandably slow
 
-Along with this, we made a working version of a normal chess game as a template to build upon
+We made a working version of a normal chess game as a template to build upon
 
-Along with this, we created GUI for a starting menu and black/white winning
+We created GUI for a starting menu and black/white winning
 - The GUI's are implimented with Stockfish API chess, but not the normal version of chess
 
 The project does not fully work as this is the extent the project has been made
