@@ -8,6 +8,14 @@ The project uses Roboflow with YOLO v9 for object detection in order to detect t
 - Using the image manipulation, we set squares around each square on the chessboard and gets its position in an array
 - The chess piece model then makes a prediction and compares each (X,Y) coordinate found to its corresponding square
 
+We also created a working version of Stockfish chess that the user can play against
+- Without using multi threading, the stockfish is understandably slow
+
+Along with this, we made a working version of a normal chess game as a template to build upon
+
+Along with this, we created GUI for a starting menu and black/white winning
+- The GUI's are implimented with Stockfish API chess, but not the normal version of chess
+
 The project does not fully work as this is the extent the project has been made
 
 To fully complete the project, we would need to connect the AI model to the stockfish API - most likely by making the model find and return the FIN notation that stockfish can use
